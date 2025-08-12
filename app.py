@@ -1,21 +1,18 @@
 import time
 import base64
-import io
-from flask import Flask, request, jsonify, render_template
 import cv2
 import numpy as np
+from flask import Flask, request, jsonify, send_from_directory
 from ultralytics import YOLO
 
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__)
 
-# Directly load model (local file in same folder)
+# Load YOLO model from local file
 model = YOLO("yolov8n.pt")
-
-# Minimum confidence threshold
 MIN_CONF = 0.25
 
 def decide_direction_from_results(results, frame_width):
-    """Simple direction logic based on object positions."""
+    """Decide movement direction based on object positions."""
     zone = {"left": False, "center": False, "right": False}
     if results is None or len(results.boxes) == 0:
         return "Move Forward"
@@ -58,7 +55,7 @@ def annotate_frame(results, frame):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return send_from_directory(".", "index.html")
 
 @app.route("/infer", methods=["POST"])
 def infer():
