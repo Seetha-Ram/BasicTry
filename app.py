@@ -1,34 +1,21 @@
 from flask import Flask, Response, render_template_string
 import cv2
 from ultralytics import YOLO
-import pyttsx3
-import threading
 import time
 
 app = Flask(__name__)
-
-# Initialize TTS engine
-engine = pyttsx3.init()
-engine.setProperty('rate', 150)
 
 # Load YOLO model
 model = YOLO("yolov8n.pt")
 cap = cv2.VideoCapture(0)
 
 last_direction = None
-last_spoken_time = time.time()
-speak_interval = 3  # seconds
-
-# Function to speak in a separate thread
-def speak(text):
-    def run():
-        engine.say(text)
-        engine.runAndWait()
-    threading.Thread(target=run).start()
+last_update_time = time.time()
+update_interval = 3  # seconds
 
 # Frame generator for video streaming
 def gen_frames():
-    global last_direction, last_spoken_time
+    global last_direction, last_update_time
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -62,12 +49,11 @@ def gen_frames():
         else:
             direction = "Stop"
 
-        # Speak direction every few seconds or if it changes
+        # Only update direction periodically or when it changes
         current_time = time.time()
-        if direction != last_direction or (current_time - last_spoken_time > speak_interval):
-            speak(direction)
+        if direction != last_direction or (current_time - last_update_time > update_interval):
             last_direction = direction
-            last_spoken_time = current_time
+            last_update_time = current_time
 
         # Display direction on frame
         cv2.putText(annotated_frame, f"Direction: {direction}", (10, 30),
